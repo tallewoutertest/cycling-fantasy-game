@@ -54,6 +54,10 @@ function showAdminTab(tabName) {
 
     document.getElementById(`tab-${tabName}`).classList.add('active');
     document.getElementById(`nav-${tabName}`).classList.add('active');
+
+    if (tabName === 'results') {
+        loadResultsRaces();
+    }
 }
 
 // ====== RACES MANAGEMENT ======
@@ -639,6 +643,489 @@ async function saveH2H() {
         loadRaceH2H();
     }
 }
+
+// ====== RESULTS MANAGEMENT ======
+
+let currentResultsRace = null;
+let resultSelectedRiders = {};
+let resultsTop10Sortable = null;
+
+// Load races for results entry
+function loadResultsRaces() {
+    const container = document.getElementById('results-race-list');
+    if (!allRaces || allRaces.length === 0) {
+        container.innerHTML = '<p class="info-text">Nog geen koersen beschikbaar.</p>';
+        return;
+    }
+
+    // Show races sorted by date (most recent first), only past deadline
+    const now = new Date();
+    const pastRaces = allRaces.filter(r => new Date(r.registration_deadline) <= now);
+    const upcomingRaces = allRaces.filter(r => new Date(r.registration_deadline) > now);
+
+    let html = '';
+    if (pastRaces.length > 0) {
+        html += '<h3 style="color: var(--text); margin-bottom: 15px;">Gesloten Koersen (uitslag invoeren)</h3>';
+        pastRaces.forEach(race => {
+            const raceDate = new Date(race.date).toLocaleDateString('nl-NL', { dateStyle: 'long' });
+            html += `
+                <div class="data-item">
+                    <div class="data-item-info">
+                        <h4>${race.name} ${race.is_monument ? '⭐' : ''}</h4>
+                        <p>Datum: ${raceDate}</p>
+                    </div>
+                    <div class="data-item-actions">
+                        <button class="btn-config" onclick="openResultsModal('${race.id}')">Uitslag Invoeren</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    if (upcomingRaces.length > 0) {
+        html += '<h3 style="color: var(--text-muted); margin: 25px 0 15px;">Aankomende Koersen (nog niet beschikbaar)</h3>';
+        upcomingRaces.forEach(race => {
+            const raceDate = new Date(race.date).toLocaleDateString('nl-NL', { dateStyle: 'long' });
+            html += `
+                <div class="data-item" style="opacity: 0.5;">
+                    <div class="data-item-info">
+                        <h4>${race.name}</h4>
+                        <p>Datum: ${raceDate} — Inschrijving nog open</p>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    if (!html) {
+        html = '<p class="info-text">Nog geen koersen beschikbaar.</p>';
+    }
+
+    container.innerHTML = html;
+}
+
+// Open results modal
+async function openResultsModal(raceId) {
+    currentResultsRace = allRaces.find(r => r.id === raceId);
+    if (!currentResultsRace) return;
+
+    document.getElementById('results-race-name').textContent = currentResultsRace.name + ' — Uitslag';
+    document.getElementById('results-modal').style.display = 'block';
+    document.getElementById('scoring-status').innerHTML = '';
+    resultSelectedRiders = {};
+
+    showResultsTab('top3');
+    await loadExistingResultsTop3();
+    await loadResultsTop10();
+    await loadResultsH2H();
+}
+
+function closeResultsModal() {
+    document.getElementById('results-modal').style.display = 'none';
+    currentResultsRace = null;
+    resultSelectedRiders = {};
+}
+
+function showResultsTab(tabName) {
+    document.querySelectorAll('#results-modal .race-tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('#results-modal .tab-btn').forEach(btn => btn.classList.remove('active'));
+
+    document.getElementById(`results-tab-${tabName}`).classList.add('active');
+    document.getElementById(`tab-btn-res-${tabName}`).classList.add('active');
+}
+
+// Search riders for result entry
+function searchResultRider(input, resultsId) {
+    const query = input.value.toLowerCase().trim();
+    const resultsDiv = document.getElementById(resultsId);
+
+    if (query.length < 2) {
+        resultsDiv.innerHTML = '';
+        return;
+    }
+
+    const filtered = allRiders.filter(r => {
+        const fullName = `${r.first_name} ${r.last_name}`.toLowerCase();
+        return fullName.includes(query);
+    }).slice(0, 10);
+
+    resultsDiv.innerHTML = filtered.map(r => `
+        <div class="autocomplete-item" onclick="selectResultRider('${r.id}', '${r.first_name}', '${r.last_name}', '${input.id}', '${resultsId}')">
+            ${r.first_name} ${r.last_name}
+            ${r.team ? `<span class="rider-team">${r.team}</span>` : ''}
+        </div>
+    `).join('');
+}
+
+function selectResultRider(riderId, firstName, lastName, inputId, resultsId) {
+    document.getElementById(inputId).value = `${firstName} ${lastName}`;
+    resultSelectedRiders[inputId] = riderId;
+    document.getElementById(resultsId).innerHTML = '';
+}
+
+// Load existing top 3 results
+async function loadExistingResultsTop3() {
+    const { data, error } = await supabase
+        .from('race_results_top3')
+        .select('position, rider_id, riders(id, first_name, last_name)')
+        .eq('race_id', currentResultsRace.id)
+        .order('position');
+
+    if (data && data.length > 0) {
+        data.forEach(item => {
+            const inputId = `result-top3-${item.position}`;
+            const input = document.getElementById(inputId);
+            if (input && item.riders) {
+                input.value = `${item.riders.first_name} ${item.riders.last_name}`;
+                resultSelectedRiders[inputId] = item.rider_id;
+            }
+        });
+    } else {
+        for (let i = 1; i <= 3; i++) {
+            document.getElementById(`result-top3-${i}`).value = '';
+        }
+    }
+}
+
+// Save top 3 results
+async function saveResultsTop3() {
+    const riders = [];
+    for (let i = 1; i <= 3; i++) {
+        const riderId = resultSelectedRiders[`result-top3-${i}`];
+        if (!riderId) {
+            alert(`Selecteer een renner voor positie ${i}`);
+            return;
+        }
+        if (riders.includes(riderId)) {
+            alert('Je kunt niet dezelfde renner meerdere keren selecteren');
+            return;
+        }
+        riders.push(riderId);
+    }
+
+    // Delete existing
+    await supabase.from('race_results_top3').delete().eq('race_id', currentResultsRace.id);
+
+    // Insert new
+    const data = riders.map((riderId, idx) => ({
+        race_id: currentResultsRace.id,
+        rider_id: riderId,
+        position: idx + 1
+    }));
+
+    const { error } = await supabase.from('race_results_top3').insert(data);
+    if (error) {
+        alert('Fout bij opslaan: ' + error.message);
+    } else {
+        alert('Top 3 uitslag opgeslagen!');
+    }
+}
+
+// Load top 10 results (using the configured candidates)
+async function loadResultsTop10() {
+    // Load configured top 10 candidates
+    const { data: candidates, error: candError } = await supabase
+        .from('top_10_candidates')
+        .select('*, riders(*)')
+        .eq('race_id', currentResultsRace.id)
+        .order('display_order');
+
+    const container = document.getElementById('results-top10-list');
+
+    if (!candidates || candidates.length === 0) {
+        container.innerHTML = '<p class="info-text">Geen top 10 kandidaten geconfigureerd voor deze koers.</p>';
+        return;
+    }
+
+    // Load existing results
+    const { data: existingResults } = await supabase
+        .from('race_results_top10')
+        .select('rider_id, actual_position')
+        .eq('race_id', currentResultsRace.id);
+
+    let orderedCandidates = [...candidates];
+
+    if (existingResults && existingResults.length > 0) {
+        const posMap = {};
+        existingResults.forEach(r => { posMap[r.rider_id] = r.actual_position; });
+        orderedCandidates.sort((a, b) => {
+            const posA = posMap[a.riders.id] || 999;
+            const posB = posMap[b.riders.id] || 999;
+            return posA - posB;
+        });
+    }
+
+    container.innerHTML = orderedCandidates.map((candidate, index) => {
+        const rider = candidate.riders;
+        return `
+            <div class="sortable-item" data-rider-id="${rider.id}">
+                <span class="position-number">${index + 1}</span>
+                <span class="rider-name">${rider.first_name} ${rider.last_name}</span>
+                ${rider.team ? `<span class="rider-team">${rider.team}</span>` : ''}
+                <span class="drag-handle">⋮⋮</span>
+            </div>
+        `;
+    }).join('');
+
+    if (resultsTop10Sortable) resultsTop10Sortable.destroy();
+    resultsTop10Sortable = new Sortable(container, {
+        animation: 150,
+        handle: '.drag-handle',
+        onEnd: function() {
+            const items = container.querySelectorAll('.sortable-item');
+            items.forEach((item, idx) => {
+                item.querySelector('.position-number').textContent = idx + 1;
+            });
+        }
+    });
+}
+
+// Save top 10 results
+async function saveResultsTop10() {
+    const items = document.querySelectorAll('#results-top10-list .sortable-item');
+    if (items.length === 0) {
+        alert('Geen top 10 kandidaten om op te slaan');
+        return;
+    }
+
+    // Delete existing
+    await supabase.from('race_results_top10').delete().eq('race_id', currentResultsRace.id);
+
+    const data = Array.from(items).map((item, idx) => ({
+        race_id: currentResultsRace.id,
+        rider_id: item.dataset.riderId,
+        actual_position: idx + 1
+    }));
+
+    const { error } = await supabase.from('race_results_top10').insert(data);
+    if (error) {
+        alert('Fout bij opslaan: ' + error.message);
+    } else {
+        alert('Top 10 volgorde opgeslagen!');
+    }
+}
+
+// Load H2H results
+async function loadResultsH2H() {
+    const container = document.getElementById('results-h2h-selection');
+
+    // Load H2H config
+    const { data: h2hConfig, error: h2hError } = await supabase
+        .from('head_to_head')
+        .select(`
+            id,
+            rider_a:riders!head_to_head_rider_a_id_fkey(id, first_name, last_name, team),
+            rider_b:riders!head_to_head_rider_b_id_fkey(id, first_name, last_name, team)
+        `)
+        .eq('race_id', currentResultsRace.id)
+        .single();
+
+    if (h2hError || !h2hConfig || !h2hConfig.rider_a || !h2hConfig.rider_b) {
+        container.innerHTML = '<p class="info-text">Geen head-to-head geconfigureerd voor deze koers.</p>';
+        return;
+    }
+
+    // Check existing result
+    const { data: existingH2H } = await supabase
+        .from('race_results_h2h')
+        .select('winning_rider_id')
+        .eq('race_id', currentResultsRace.id)
+        .single();
+
+    const winnerId = existingH2H?.winning_rider_id || null;
+    const riderA = h2hConfig.rider_a;
+    const riderB = h2hConfig.rider_b;
+
+    container.innerHTML = `
+        <div class="h2h-options">
+            <label class="h2h-option ${winnerId === riderA.id ? 'selected' : ''}">
+                <input type="radio" name="result-h2h" value="${riderA.id}" data-h2h-id="${h2hConfig.id}"
+                       ${winnerId === riderA.id ? 'checked' : ''}>
+                <div class="h2h-rider">
+                    <span class="rider-name">${riderA.first_name} ${riderA.last_name}</span>
+                    ${riderA.team ? `<span class="rider-team">${riderA.team}</span>` : ''}
+                </div>
+            </label>
+            <div class="h2h-vs">VS</div>
+            <label class="h2h-option ${winnerId === riderB.id ? 'selected' : ''}">
+                <input type="radio" name="result-h2h" value="${riderB.id}" data-h2h-id="${h2hConfig.id}"
+                       ${winnerId === riderB.id ? 'checked' : ''}>
+                <div class="h2h-rider">
+                    <span class="rider-name">${riderB.first_name} ${riderB.last_name}</span>
+                    ${riderB.team ? `<span class="rider-team">${riderB.team}</span>` : ''}
+                </div>
+            </label>
+        </div>
+    `;
+
+    container.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            container.querySelectorAll('.h2h-option').forEach(opt => opt.classList.remove('selected'));
+            this.closest('.h2h-option').classList.add('selected');
+        });
+    });
+}
+
+// Save H2H result
+async function saveResultsH2H() {
+    const selected = document.querySelector('input[name="result-h2h"]:checked');
+    if (!selected) {
+        alert('Selecteer de winnaar van de H2H');
+        return;
+    }
+
+    const winnerId = selected.value;
+    const h2hId = selected.dataset.h2hId;
+
+    // Delete existing
+    await supabase.from('race_results_h2h').delete().eq('race_id', currentResultsRace.id);
+
+    const { error } = await supabase.from('race_results_h2h').insert({
+        race_id: currentResultsRace.id,
+        h2h_id: h2hId,
+        winning_rider_id: winnerId
+    });
+
+    if (error) {
+        alert('Fout bij opslaan: ' + error.message);
+    } else {
+        alert('H2H uitslag opgeslagen!');
+    }
+}
+
+// ====== SCORE CALCULATION ======
+
+async function calculateScores() {
+    if (!currentResultsRace) return;
+
+    const statusDiv = document.getElementById('scoring-status');
+    statusDiv.innerHTML = '<p style="color: var(--primary);">Punten berekenen...</p>';
+
+    try {
+        const raceId = currentResultsRace.id;
+
+        // Load actual results
+        const [resTop3, resTop10, resH2H] = await Promise.all([
+            supabase.from('race_results_top3').select('rider_id, position').eq('race_id', raceId),
+            supabase.from('race_results_top10').select('rider_id, actual_position').eq('race_id', raceId),
+            supabase.from('race_results_h2h').select('winning_rider_id').eq('race_id', raceId).single()
+        ]);
+
+        const actualTop3 = resTop3.data || [];
+        const actualTop10 = resTop10.data || [];
+        const h2hWinner = resH2H.data?.winning_rider_id || null;
+
+        if (actualTop3.length === 0) {
+            statusDiv.innerHTML = '<p style="color: var(--error);">Vul eerst de top 3 uitslag in!</p>';
+            return;
+        }
+
+        // Load all predictions for this race
+        const { data: predictions, error: predError } = await supabase
+            .from('predictions')
+            .select(`
+                id,
+                user_id,
+                prediction_top3 (rider_id, position),
+                prediction_top10 (rider_id, predicted_position),
+                prediction_h2h (selected_rider_id)
+            `)
+            .eq('race_id', raceId);
+
+        if (predError) {
+            statusDiv.innerHTML = `<p style="color: var(--error);">Fout bij laden voorspellingen: ${predError.message}</p>`;
+            return;
+        }
+
+        if (!predictions || predictions.length === 0) {
+            statusDiv.innerHTML = '<p style="color: var(--text-muted);">Geen voorspellingen gevonden voor deze koers.</p>';
+            return;
+        }
+
+        // Delete existing scores for this race
+        await supabase.from('scores').delete().eq('race_id', raceId);
+
+        // Calculate scores for each user
+        const scoreRows = [];
+        for (const pred of predictions) {
+            const top3Score = calculateTop3Score(pred.prediction_top3 || [], actualTop3);
+            const top10Score = calculateTop10Score(pred.prediction_top10 || [], actualTop10);
+            const selectedH2H = pred.prediction_h2h?.[0]?.selected_rider_id || null;
+            const h2hScore = calculateH2HScore(selectedH2H, h2hWinner);
+
+            scoreRows.push({
+                user_id: pred.user_id,
+                race_id: raceId,
+                top3_score: top3Score,
+                top10_score: top10Score,
+                h2h_score: h2hScore,
+                total_score: top3Score + top10Score + h2hScore
+            });
+        }
+
+        const { error: insertError } = await supabase.from('scores').insert(scoreRows);
+
+        if (insertError) {
+            statusDiv.innerHTML = `<p style="color: var(--error);">Fout bij opslaan scores: ${insertError.message}</p>`;
+            return;
+        }
+
+        // Show results summary
+        // Load user names
+        const userIds = scoreRows.map(s => s.user_id);
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, display_name')
+            .in('id', userIds);
+
+        const nameMap = {};
+        (profiles || []).forEach(p => { nameMap[p.id] = p.display_name || 'Onbekend'; });
+
+        const sorted = scoreRows.sort((a, b) => b.total_score - a.total_score);
+
+        let summaryHtml = `<h4 style="color: var(--success); margin: 15px 0;">Punten berekend voor ${scoreRows.length} speler(s)!</h4>`;
+        summaryHtml += '<table class="scores-table"><thead><tr><th>#</th><th>Speler</th><th>Top 3</th><th>Top 10</th><th>H2H</th><th>Totaal</th></tr></thead><tbody>';
+
+        sorted.forEach((s, idx) => {
+            summaryHtml += `<tr>
+                <td>${idx + 1}</td>
+                <td>${nameMap[s.user_id] || 'Onbekend'}</td>
+                <td>${s.top3_score}</td>
+                <td>${s.top10_score}</td>
+                <td>${s.h2h_score}</td>
+                <td><strong>${s.total_score}</strong></td>
+            </tr>`;
+        });
+
+        summaryHtml += '</tbody></table>';
+        statusDiv.innerHTML = summaryHtml;
+
+    } catch (err) {
+        console.error('Score calculation error:', err);
+        statusDiv.innerHTML = `<p style="color: var(--error);">Onverwachte fout: ${err.message}</p>`;
+    }
+}
+
+// Close autocomplete when clicking outside in results modal
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.input-group')) {
+        document.querySelectorAll('#results-modal .autocomplete-results').forEach(div => {
+            div.innerHTML = '';
+        });
+    }
+});
+
+// Close modals when clicking outside
+window.addEventListener('click', function(event) {
+    const resultsModal = document.getElementById('results-modal');
+    if (event.target === resultsModal) {
+        closeResultsModal();
+    }
+    const raceDetailModal = document.getElementById('race-detail-modal');
+    if (event.target === raceDetailModal) {
+        closeRaceDetail();
+    }
+});
 
 // Initialize
 document.addEventListener('DOMContentLoaded', initAdmin);
