@@ -345,3 +345,53 @@ code {
         grid-template-columns: 1fr;
     }
 }
+
+/* Scores Table in Admin */
+.scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.scores-table th {
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--primary);
+    padding: 10px 15px;
+    text-align: left;
+    font-size: 0.9em;
+}
+
+.scores-table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.scores-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Scoring Actions */
+.scoring-actions {
+    text-align: center;
+}
+
+.scoring-actions h3 {
+    color: var(--text);
+    margin-bottom: 10px;
+}
+
+.btn-large {
+    padding: 15px 40px;
+    font-size: 16px;
+}
+
+.scoring-status {
+    margin-top: 20px;
+}
+
+/* Top 3 inputs in results */
+.top3-inputs {
+    display: grid;
+    gap: 20px;
+}

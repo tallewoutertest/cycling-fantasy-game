@@ -660,4 +660,160 @@ main {
         margin: 5% auto;
         padding: 20px;
     }
+
+    .standings-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .rules-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Standings */
+.standings-section {
+    margin-bottom: 40px;
+}
+
+.standings-section h3 {
+    color: var(--text);
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.standings-table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 400px;
+}
+
+.standings-table th {
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--primary);
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.standings-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.standings-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.standings-table .pos-col {
+    width: 50px;
+    text-align: center;
+}
+
+.standings-table .race-col {
+    text-align: center;
+    min-width: 80px;
+}
+
+.standings-table .total-col {
+    text-align: center;
+    min-width: 80px;
+    color: var(--primary);
+}
+
+.standings-table .player-name {
+    font-weight: 500;
+}
+
+.standings-table tr.current-user {
+    background: rgba(255, 215, 0, 0.08);
+}
+
+.standings-table tr.current-user td {
+    color: var(--primary);
+}
+
+.medal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+.medal.gold {
+    background: linear-gradient(135deg, #ffd700, #ffb800);
+    color: #1a1a2e;
+}
+
+.medal.silver {
+    background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+    color: #1a1a2e;
+}
+
+.medal.bronze {
+    background: linear-gradient(135deg, #cd7f32, #a0522d);
+    color: white;
+}
+
+/* Scoring Rules */
+.scoring-rules {
+    margin-top: 40px;
+}
+
+.scoring-rules h3 {
+    color: var(--text);
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.rule-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.rule-card h4 {
+    color: var(--primary);
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.rule-card p {
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.rule-card strong {
+    color: var(--text);
+}
+
+/* Race card score badge */
+.score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 215, 0, 0.15);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-weight: 600;
 }

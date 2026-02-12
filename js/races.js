@@ -51,6 +51,7 @@ function displayRaces() {
 
     // Load prediction status for each race
     loadPredictionStatus();
+    loadUserScores();
 }
 
 // Create HTML for a race card
@@ -87,10 +88,31 @@ function createRaceCard(race, isOpen) {
                            </button>`
                         : '<span class="closed-badge">Gesloten</span>'
                     }
+                    <span class="score-badge" id="score-${race.id}" style="display:none;"></span>
                 </div>
             </div>
         </div>
     `;
+}
+
+// Load user scores for closed races
+async function loadUserScores() {
+    if (!currentUser) return;
+
+    const { data, error } = await supabase
+        .from('scores')
+        .select('race_id, top3_score, top10_score, h2h_score, total_score')
+        .eq('user_id', currentUser.id);
+
+    if (data) {
+        data.forEach(score => {
+            const el = document.getElementById(`score-${score.race_id}`);
+            if (el) {
+                el.textContent = `${score.total_score} punten`;
+                el.style.display = 'inline-flex';
+            }
+        });
+    }
 }
 
 // Check if user has already made predictions for races
