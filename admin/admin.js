@@ -328,7 +328,17 @@ async function openRaceDetail(raceId) {
     document.getElementById('detail-race-name').textContent = currentRaceDetail.name;
     document.getElementById('race-detail-modal').style.display = 'block';
 
-    showRaceTab('participants');
+    // Fill in edit form
+    document.getElementById('edit-race-name').value = currentRaceDetail.name;
+    document.getElementById('edit-race-date').value = currentRaceDetail.date;
+    // Convert deadline to datetime-local format
+    const deadline = new Date(currentRaceDetail.registration_deadline);
+    const localDeadline = new Date(deadline.getTime() - deadline.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 16);
+    document.getElementById('edit-race-deadline').value = localDeadline;
+    document.getElementById('edit-race-monument').checked = currentRaceDetail.is_monument;
+
+    showRaceTab('details');
     await loadRaceParticipants();
     await loadRaceTop10();
     await loadRaceH2H();
@@ -340,8 +350,9 @@ function closeRaceDetail() {
 }
 
 function showRaceTab(tabName) {
-    document.querySelectorAll('.race-tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    const modal = document.getElementById('race-detail-modal');
+    modal.querySelectorAll('.race-tab-content').forEach(tab => tab.classList.remove('active'));
+    modal.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
     document.getElementById(`race-tab-${tabName}`).classList.add('active');
     document.getElementById(`tab-btn-${tabName}`).classList.add('active');
@@ -643,6 +654,42 @@ async function saveH2H() {
         loadRaceH2H();
     }
 }
+
+// ====== EDIT RACE DETAILS ======
+
+document.getElementById('edit-race-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!currentRaceDetail) return;
+
+    const updatedData = {
+        name: document.getElementById('edit-race-name').value.trim(),
+        date: document.getElementById('edit-race-date').value,
+        registration_deadline: document.getElementById('edit-race-deadline').value,
+        is_monument: document.getElementById('edit-race-monument').checked
+    };
+
+    if (!updatedData.name || !updatedData.date || !updatedData.registration_deadline) {
+        alert('Vul alle verplichte velden in');
+        return;
+    }
+
+    const { error } = await supabase
+        .from('races')
+        .update(updatedData)
+        .eq('id', currentRaceDetail.id);
+
+    if (error) {
+        alert('Fout bij opslaan: ' + error.message);
+    } else {
+        alert('Koers bijgewerkt!');
+        // Update local data
+        Object.assign(currentRaceDetail, updatedData);
+        document.getElementById('detail-race-name').textContent = updatedData.name;
+        // Refresh races list
+        loadRaces();
+    }
+});
 
 // ====== RESULTS MANAGEMENT ======
 

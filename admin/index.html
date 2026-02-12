@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Wielrennen Fantasy</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="admin.css">
 </head>
@@ -232,7 +233,10 @@
             <h2 id="detail-race-name"></h2>
 
             <div class="modal-tabs">
-                <button onclick="showRaceTab('participants')" class="tab-btn active" id="tab-btn-participants">
+                <button onclick="showRaceTab('details')" class="tab-btn active" id="tab-btn-details">
+                    Gegevens
+                </button>
+                <button onclick="showRaceTab('participants')" class="tab-btn" id="tab-btn-participants">
                     Deelnemers
                 </button>
                 <button onclick="showRaceTab('top10')" class="tab-btn" id="tab-btn-top10">
@@ -243,8 +247,38 @@
                 </button>
             </div>
 
+            <!-- Details Tab -->
+            <div id="race-tab-details" class="race-tab-content active">
+                <h3>Koers Gegevens Bewerken</h3>
+                <form id="edit-race-form">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Naam *</label>
+                            <input type="text" id="edit-race-name" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Datum *</label>
+                            <input type="date" id="edit-race-date" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Inschrijving Deadline *</label>
+                            <input type="datetime-local" id="edit-race-deadline" required>
+                        </div>
+                        <div class="input-group checkbox-group">
+                            <label>
+                                <input type="checkbox" id="edit-race-monument">
+                                Is Monument
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Wijzigingen Opslaan</button>
+                    </div>
+                </form>
+            </div>
+
             <!-- Participants Tab -->
-            <div id="race-tab-participants" class="race-tab-content active">
+            <div id="race-tab-participants" class="race-tab-content">
                 <h3>Deelnemende Renners</h3>
                 <div class="search-add">
                     <input type="text" id="add-participant-search" placeholder="Zoek renner om toe te voegen..."
