@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Wielrennen Fantasy</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div id="auth-check" style="display: none;">
+        <div class="auth-container">
+            <div class="auth-box">
+                <h1>⚠️ Toegang Geweigerd</h1>
+                <p class="subtitle">Je hebt geen admin rechten.</p>
+                <button onclick="window.location.href='../index.html'" class="btn-primary">
+                    Terug naar Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-container" class="app-container" style="display: none;">
+        <header>
+            <div class="header-content">
+                <h1>🛠️ Admin Panel</h1>
+                <div class="user-info">
+                    <span id="user-name"></span>
+                    <button onclick="window.location.href='../index.html'" class="btn-logout">
+                        Terug naar App
+                    </button>
+                    <button onclick="logout()" class="btn-logout">Uitloggen</button>
+                </div>
+            </div>
+        </header>
+
+        <nav class="main-nav">
+            <button onclick="showAdminTab('races')" class="nav-btn active" id="nav-races">Koersen</button>
+            <button onclick="showAdminTab('riders')" class="nav-btn" id="nav-riders">Renners</button>
+        </nav>
+
+        <main id="main-content">
+            <!-- Races Management -->
+            <div id="tab-races" class="tab-content active">
+                <div class="admin-section">
+                    <h2>Koersen Beheer</h2>
+                    <button onclick="showAddRaceForm()" class="btn-primary">+ Nieuwe Koers</button>
+                </div>
+
+                <div id="add-race-form" class="form-section" style="display: none;">
+                    <h3>Nieuwe Koers Toevoegen</h3>
+                    <form id="race-form">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label>Naam *</label>
+                                <input type="text" id="race-name" required placeholder="bijv. Ronde van Vlaanderen">
+                            </div>
+                            <div class="input-group">
+                                <label>Datum *</label>
+                                <input type="date" id="race-date" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Inschrijving Deadline *</label>
+                                <input type="datetime-local" id="race-deadline" required>
+                            </div>
+                            <div class="input-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="race-monument">
+                                    Is Monument
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" onclick="hideAddRaceForm()" class="btn-secondary">Annuleren</button>
+                            <button type="submit" class="btn-primary">Koers Aanmaken</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="races-list" class="data-list"></div>
+            </div>
+
+            <!-- Riders Management -->
+            <div id="tab-riders" class="tab-content">
+                <div class="admin-section">
+                    <h2>Renners Database</h2>
+                    <div class="action-buttons">
+                        <button onclick="showAddRiderForm()" class="btn-primary">+ Renner Toevoegen</button>
+                        <button onclick="showBulkImport()" class="btn-secondary">Bulk Import</button>
+                    </div>
+                </div>
+
+                <div id="add-rider-form" class="form-section" style="display: none;">
+                    <h3>Nieuwe Renner Toevoegen</h3>
+                    <form id="rider-form">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label>Voornaam *</label>
+                                <input type="text" id="rider-firstname" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Achternaam *</label>
+                                <input type="text" id="rider-lastname" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Nationaliteit</label>
+                                <input type="text" id="rider-nationality" placeholder="bijv. BEL">
+                            </div>
+                            <div class="input-group">
+                                <label>Team</label>
+                                <input type="text" id="rider-team" placeholder="bijv. UAE Team Emirates">
+                            </div>
+                            <div class="input-group">
+                                <label>UCI ID</label>
+                                <input type="text" id="rider-uci" placeholder="Optioneel">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" onclick="hideAddRiderForm()" class="btn-secondary">Annuleren</button>
+                            <button type="submit" class="btn-primary">Renner Toevoegen</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="bulk-import-section" class="form-section" style="display: none;">
+                    <h3>Bulk Import Renners</h3>
+                    <p class="section-hint">
+                        Plak een lijst met renners (één per regel) in formaat:<br>
+                        <code>Voornaam Achternaam, Team, Nationaliteit</code>
+                    </p>
+                    <textarea id="bulk-riders" rows="10" placeholder="Wout van Aert, Visma-Lease a Bike, BEL&#10;Mathieu van der Poel, Alpecin-Deceuninck, NED"></textarea>
+                    <div class="form-actions">
+                        <button type="button" onclick="hideBulkImport()" class="btn-secondary">Annuleren</button>
+                        <button onclick="processBulkImport()" class="btn-primary">Importeren</button>
+                    </div>
+                </div>
+
+                <div class="search-section">
+                    <input type="text" id="rider-search" placeholder="Zoek renner..." onkeyup="filterRiders()">
+                </div>
+
+                <div id="riders-list" class="data-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Race Detail Modal -->
+    <div id="race-detail-modal" class="modal">
+        <div class="modal-content large">
+            <span class="close" onclick="closeRaceDetail()">&times;</span>
+            <h2 id="detail-race-name"></h2>
+
+            <div class="modal-tabs">
+                <button onclick="showRaceTab('participants')" class="tab-btn active" id="tab-btn-participants">
+                    Deelnemers
+                </button>
+                <button onclick="showRaceTab('top10')" class="tab-btn" id="tab-btn-top10">
+                    Top 10 Config
+                </button>
+                <button onclick="showRaceTab('h2h')" class="tab-btn" id="tab-btn-h2h">
+                    Head-to-Head
+                </button>
+            </div>
+
+            <!-- Participants Tab -->
+            <div id="race-tab-participants" class="race-tab-content active">
+                <h3>Deelnemende Renners</h3>
+                <div class="search-add">
+                    <input type="text" id="add-participant-search" placeholder="Zoek renner om toe te voegen..."
+                           onkeyup="searchParticipants()">
+                    <div id="participant-results" class="autocomplete-results"></div>
+                </div>
+                <div id="participants-list" class="participants-grid"></div>
+            </div>
+
+            <!-- Top 10 Tab -->
+            <div id="race-tab-top10" class="race-tab-content">
+                <h3>Top 10 Kandidaten Configureren</h3>
+                <p class="section-hint">Selecteer 10 renners die spelers moeten rangschikken</p>
+                <div class="search-add">
+                    <input type="text" id="add-top10-search" placeholder="Zoek renner om toe te voegen..."
+                           onkeyup="searchTop10Candidates()">
+                    <div id="top10-results" class="autocomplete-results"></div>
+                </div>
+                <div id="top10-list" class="sortable-list"></div>
+            </div>
+
+            <!-- H2H Tab -->
+            <div id="race-tab-h2h" class="race-tab-content">
+                <h3>Head-to-Head Configureren</h3>
+                <p class="section-hint">Kies 2 renners voor de head-to-head vraag</p>
+                <div class="h2h-config">
+                    <div class="input-group">
+                        <label>Renner A</label>
+                        <input type="text" id="h2h-rider-a" placeholder="Zoek renner..."
+                               onkeyup="searchH2H('a')" autocomplete="off">
+                        <div id="h2h-results-a" class="autocomplete-results"></div>
+                    </div>
+                    <div class="h2h-vs-large">VS</div>
+                    <div class="input-group">
+                        <label>Renner B</label>
+                        <input type="text" id="h2h-rider-b" placeholder="Zoek renner..."
+                               onkeyup="searchH2H('b')" autocomplete="off">
+                        <div id="h2h-results-b" class="autocomplete-results"></div>
+                    </div>
+                </div>
+                <button onclick="saveH2H()" class="btn-primary">Opslaan</button>
+                <div id="current-h2h"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- SortableJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+    <!-- Scripts -->
+    <script src="../js/config.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

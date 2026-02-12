@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        .status {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .success { background: #4caf50; }
+        .error { background: #f44336; }
+        .info { background: #2196F3; }
+        pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 20px;
+            background: #ffd700;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Supabase Connection Test</h1>
+
+    <div id="results"></div>
+
+    <button onclick="testConnection()">Test Verbinding</button>
+    <button onclick="testDatabase()">Test Database</button>
+
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+
+        // Config
+        const SUPABASE_URL = 'https://qrwegdkpzgalohlrcfmk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyd2VnZGtwemdhbG9obHJjZm1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MDI4MTMsImV4cCI6MjA4NjQ3ODgxM30.lzbeubbM-rwG095cGhzkFjWl0ZR8gn851fnKgbVJiug';
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+
+        function testConnection() {
+            resultsDiv.innerHTML = '';
+
+            addResult('Stap 1: Controleer of Supabase library geladen is...', 'info');
+
+            if (typeof window.supabase === 'undefined') {
+                addResult('❌ FOUT: Supabase library niet geladen!', 'error');
+                return;
+            }
+
+            addResult('✅ Supabase library geladen', 'success');
+
+            addResult('Stap 2: Maak Supabase client...', 'info');
+
+            try {
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                addResult('✅ Supabase client aangemaakt', 'success');
+
+                addResult('<pre>URL: ' + SUPABASE_URL + '\nKey: ' + SUPABASE_ANON_KEY.substring(0, 50) + '...</pre>', 'info');
+
+                window.testSupabase = supabase;
+                addResult('✅ Client opgeslagen in window.testSupabase - Klik "Test Database" om verder te testen', 'success');
+
+            } catch (error) {
+                addResult('❌ FOUT bij aanmaken client: ' + error.message, 'error');
+            }
+        }
+
+        async function testDatabase() {
+            resultsDiv.innerHTML = '';
+
+            if (!window.testSupabase) {
+                addResult('❌ Klik eerst op "Test Verbinding"', 'error');
+                return;
+            }
+
+            addResult('Test 1: Probeer riders tabel op te halen...', 'info');
+
+            try {
+                const { data, error, count } = await window.testSupabase
+                    .from('riders')
+                    .select('*', { count: 'exact' });
+
+                if (error) {
+                    addResult('❌ Database error: ' + error.message, 'error');
+                    addResult('<pre>' + JSON.stringify(error, null, 2) + '</pre>', 'error');
+                } else {
+                    addResult('✅ Database verbinding werkt!', 'success');
+                    addResult(`Gevonden: ${count} renners in de database`, 'success');
+
+                    if (data && data.length > 0) {
+                        addResult('<pre>Eerste renner:\n' + JSON.stringify(data[0], null, 2) + '</pre>', 'info');
+                    }
+                }
+            } catch (error) {
+                addResult('❌ Onverwachte fout: ' + error.message, 'error');
+                console.error(error);
+            }
+
+            addResult('Test 2: Probeer races tabel op te halen...', 'info');
+
+            try {
+                const { data, error, count } = await window.testSupabase
+                    .from('races')
+                    .select('*', { count: 'exact' });
+
+                if (error) {
+                    addResult('❌ Races error: ' + error.message, 'error');
+                } else {
+                    addResult(`✅ Races tabel werkt! Gevonden: ${count} koersen`, 'success');
+                }
+            } catch (error) {
+                addResult('❌ Onverwachte fout: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-test bij laden
+        window.addEventListener('load', function() {
+            addResult('Pagina geladen! Klik op "Test Verbinding" om te beginnen.', 'info');
+        });
+    </script>
+</body>
+</html>
