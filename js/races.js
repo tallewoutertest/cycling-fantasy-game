@@ -86,7 +86,7 @@ function createRaceCard(race, isOpen) {
                         ? `<button onclick="openPredictionModal('${race.id}')" class="btn-primary">
                              <span class="prediction-status" id="status-${race.id}">Voorspelling Invullen</span>
                            </button>`
-                        : '<span class="closed-badge">Gesloten</span>'
+                        : `<span class="status-badge bezig" id="race-status-${race.id}">Koers bezig</span>`
                     }
                     <span class="score-badge" id="score-${race.id}" style="display:none;"></span>
                 </div>
@@ -95,8 +95,26 @@ function createRaceCard(race, isOpen) {
     `;
 }
 
-// Load user scores for closed races
+// Load user scores for closed races and update race status
 async function loadUserScores() {
+    // Load races that have results (scores exist) to update status badges
+    const { data: scoredRaces } = await supabase
+        .from('scores')
+        .select('race_id')
+        .limit(1000);
+
+    const racesWithResults = new Set((scoredRaces || []).map(s => s.race_id));
+
+    // Update status badges: "Koers bezig" -> "Uitslag bekend" if results exist
+    racesWithResults.forEach(raceId => {
+        const statusEl = document.getElementById(`race-status-${raceId}`);
+        if (statusEl) {
+            statusEl.textContent = 'Uitslag bekend';
+            statusEl.classList.remove('bezig');
+            statusEl.classList.add('uitslag');
+        }
+    });
+
     if (!currentUser) return;
 
     const { data, error } = await supabase
