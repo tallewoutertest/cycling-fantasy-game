@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wielrennen Fantasy Game</title>
+    <title>Flitsende Fietsers</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="auth-container" class="auth-container">
         <div class="auth-box">
-            <h1>🚴 Wielrennen Fantasy</h1>
+            <h1>🚴 Flitsende Fietsers</h1>
             <p class="subtitle">Voorspel de uitslagen van de klassiekers</p>
 
             <div id="login-form">
@@ -37,7 +37,7 @@
     <div id="app-container" class="app-container" style="display: none;">
         <header>
             <div class="header-content">
-                <h1>🚴 Wielrennen Fantasy</h1>
+                <h1>🚴 Flitsende Fietsers</h1>
                 <div class="user-info">
                     <span id="user-name"></span>
                     <button onclick="logout()" class="btn-logout">Uitloggen</button>
@@ -143,6 +143,15 @@
             <span class="close" onclick="closeScoreDetailModal()">&times;</span>
             <h2 id="score-detail-title"></h2>
             <div id="score-detail-content"></div>
+        </div>
+    </div>
+
+    <!-- Predictions Overview Modal -->
+    <div id="predictions-overview-modal" class="modal">
+        <div class="modal-content modal-medium">
+            <span class="close" onclick="closePredictionsOverviewModal()">&times;</span>
+            <h2 id="predictions-overview-title"></h2>
+            <div id="predictions-overview-content"></div>
         </div>
     </div>
 

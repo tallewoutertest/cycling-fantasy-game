@@ -300,14 +300,103 @@ function closeScoreDetailModal() {
     document.getElementById('score-detail-modal').style.display = 'none';
 }
 
+// Show all players' predictions for a race (when "Koers bezig" is clicked)
+async function showRacePredictions(raceId, raceName) {
+    const modal = document.getElementById('predictions-overview-modal');
+    const content = document.getElementById('predictions-overview-content');
+    document.getElementById('predictions-overview-title').textContent = raceName + ' — Voorspellingen';
+    content.innerHTML = '<p class="info-text">Laden...</p>';
+    modal.style.display = 'block';
+
+    try {
+        // Load all predictions for this race
+        const { data: predictions, error } = await supabase
+            .from('predictions')
+            .select(`
+                user_id,
+                prediction_top3 (position, rider_id, riders (first_name, last_name)),
+                prediction_top10 (predicted_position, rider_id, riders (first_name, last_name)),
+                prediction_h2h (selected_rider_id, riders:riders!prediction_h2h_selected_rider_id_fkey (first_name, last_name))
+            `)
+            .eq('race_id', raceId);
+
+        if (error) throw error;
+
+        if (!predictions || predictions.length === 0) {
+            content.innerHTML = '<p class="info-text">Nog geen voorspellingen voor deze koers.</p>';
+            return;
+        }
+
+        // Load profiles
+        const userIds = predictions.map(p => p.user_id);
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, display_name')
+            .in('id', userIds);
+
+        const nameMap = {};
+        (profiles || []).forEach(p => { nameMap[p.id] = p.display_name || 'Onbekend'; });
+
+        let html = '';
+
+        predictions.forEach(pred => {
+            const playerName = nameMap[pred.user_id] || 'Onbekend';
+            const isMe = currentUser && pred.user_id === currentUser.id;
+
+            html += `<div class="prediction-card ${isMe ? 'is-me' : ''}">`;
+            html += `<h4>${playerName}${isMe ? ' (jij)' : ''}</h4>`;
+
+            // Top 3
+            const top3 = (pred.prediction_top3 || []).sort((a, b) => a.position - b.position);
+            if (top3.length > 0) {
+                html += '<div class="pred-section"><span class="pred-label">Top 3:</span>';
+                const medals = ['🥇', '🥈', '🥉'];
+                html += top3.map(t => `${medals[t.position - 1]} ${t.riders.first_name} ${t.riders.last_name}`).join(', ');
+                html += '</div>';
+            }
+
+            // Top 10
+            const top10 = (pred.prediction_top10 || []).sort((a, b) => a.predicted_position - b.predicted_position);
+            if (top10.length > 0) {
+                html += '<div class="pred-section"><span class="pred-label">Top 10:</span>';
+                html += top10.map(t => `<span class="pred-pos">${t.predicted_position}.</span> ${t.riders.first_name} ${t.riders.last_name}`).join(', ');
+                html += '</div>';
+            }
+
+            // H2H
+            if (pred.prediction_h2h?.[0]?.riders) {
+                const h2h = pred.prediction_h2h[0];
+                html += `<div class="pred-section"><span class="pred-label">H2H:</span> ${h2h.riders.first_name} ${h2h.riders.last_name}</div>`;
+            }
+
+            html += '</div>';
+        });
+
+        content.innerHTML = html;
+
+    } catch (err) {
+        console.error('Error loading predictions overview:', err);
+        content.innerHTML = '<p class="info-text">Fout bij laden van de voorspellingen.</p>';
+    }
+}
+
+// Close predictions overview modal
+function closePredictionsOverviewModal() {
+    document.getElementById('predictions-overview-modal').style.display = 'none';
+}
+
 // Close modal when clicking outside
 window.onclick = function(event) {
     const predModal = document.getElementById('prediction-modal');
     const scoreModal = document.getElementById('score-detail-modal');
+    const overviewModal = document.getElementById('predictions-overview-modal');
     if (event.target === predModal) {
         closePredictionModal();
     }
     if (event.target === scoreModal) {
         closeScoreDetailModal();
+    }
+    if (event.target === overviewModal) {
+        closePredictionsOverviewModal();
     }
 }

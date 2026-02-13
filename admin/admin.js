@@ -1,4 +1,13 @@
 // Admin Panel JavaScript
+
+// Convert a datetime-local input value (e.g. "2025-03-06T09:00") to an ISO string
+// with the correct local timezone offset, so Supabase stores the intended time.
+function localDatetimeToISO(datetimeLocalValue) {
+    if (!datetimeLocalValue) return datetimeLocalValue;
+    const date = new Date(datetimeLocalValue);
+    return date.toISOString();
+}
+
 let currentUser = null;
 let allRiders = [];
 let allRaces = [];
@@ -119,10 +128,11 @@ function displayRaces() {
 document.getElementById('race-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    const deadlineInput = document.getElementById('race-deadline').value;
     const raceData = {
         name: document.getElementById('race-name').value.trim(),
         date: document.getElementById('race-date').value,
-        registration_deadline: document.getElementById('race-deadline').value,
+        registration_deadline: localDatetimeToISO(deadlineInput),
         is_monument: document.getElementById('race-monument').checked,
         created_by: currentUser.id
     };
@@ -331,10 +341,10 @@ async function openRaceDetail(raceId) {
     // Fill in edit form
     document.getElementById('edit-race-name').value = currentRaceDetail.name;
     document.getElementById('edit-race-date').value = currentRaceDetail.date;
-    // Convert deadline to datetime-local format
+    // Convert deadline to datetime-local format (local time)
     const deadline = new Date(currentRaceDetail.registration_deadline);
-    const localDeadline = new Date(deadline.getTime() - deadline.getTimezoneOffset() * 60000)
-        .toISOString().slice(0, 16);
+    const pad = (n) => String(n).padStart(2, '0');
+    const localDeadline = `${deadline.getFullYear()}-${pad(deadline.getMonth() + 1)}-${pad(deadline.getDate())}T${pad(deadline.getHours())}:${pad(deadline.getMinutes())}`;
     document.getElementById('edit-race-deadline').value = localDeadline;
     document.getElementById('edit-race-monument').checked = currentRaceDetail.is_monument;
 
@@ -662,10 +672,11 @@ document.getElementById('edit-race-form').addEventListener('submit', async funct
 
     if (!currentRaceDetail) return;
 
+    const editDeadlineInput = document.getElementById('edit-race-deadline').value;
     const updatedData = {
         name: document.getElementById('edit-race-name').value.trim(),
         date: document.getElementById('edit-race-date').value,
-        registration_deadline: document.getElementById('edit-race-deadline').value,
+        registration_deadline: localDatetimeToISO(editDeadlineInput),
         is_monument: document.getElementById('edit-race-monument').checked
     };
 

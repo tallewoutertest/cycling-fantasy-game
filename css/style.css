@@ -946,3 +946,53 @@ main {
     color: var(--text-muted);
     font-weight: 600;
 }
+
+/* Predictions overview cards */
+.prediction-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px 18px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--border);
+}
+
+.prediction-card.is-me {
+    border-left-color: var(--primary);
+    background: rgba(255, 215, 0, 0.05);
+}
+
+.prediction-card h4 {
+    color: var(--text);
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.prediction-card.is-me h4 {
+    color: var(--primary);
+}
+
+.pred-section {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.pred-label {
+    color: var(--text);
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+.pred-pos {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.status-badge.bezig {
+    cursor: pointer;
+}
+
+.status-badge.bezig:hover {
+    background: rgba(255, 152, 0, 0.35);
+}
