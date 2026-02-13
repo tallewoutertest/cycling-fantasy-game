@@ -989,10 +989,15 @@ main {
     font-weight: 600;
 }
 
-.status-badge.bezig {
+.status-badge.bezig,
+.status-badge.uitslag {
     cursor: pointer;
 }
 
 .status-badge.bezig:hover {
     background: rgba(255, 152, 0, 0.35);
+}
+
+.status-badge.uitslag:hover {
+    background: rgba(76, 175, 80, 0.35);
 }

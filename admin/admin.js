@@ -462,7 +462,7 @@ async function loadRaceTop10() {
 
     const container = document.getElementById('top10-list');
     if (!data || data.length === 0) {
-        container.innerHTML = '<p class="info-text">Nog geen top 10 kandidaten. Voeg er 10 toe.</p>';
+        container.innerHTML = '<p class="info-text">Nog geen kandidaten. Voeg er 5 toe.</p>';
         return;
     }
 
@@ -518,8 +518,8 @@ async function addTop10Candidate(riderId) {
         .select('*', { count: 'exact', head: true })
         .eq('race_id', currentRaceDetail.id);
 
-    if (count >= 10) {
-        alert('Je kunt maximaal 10 kandidaten toevoegen');
+    if (count >= 5) {
+        alert('Je kunt maximaal 5 kandidaten toevoegen');
         return;
     }
 
@@ -891,7 +891,7 @@ async function loadResultsTop10() {
     const container = document.getElementById('results-top10-list');
 
     if (!candidates || candidates.length === 0) {
-        container.innerHTML = '<p class="info-text">Geen top 10 kandidaten geconfigureerd voor deze koers.</p>';
+        container.innerHTML = '<p class="info-text">Geen kandidaten geconfigureerd voor deze koers.</p>';
         return;
     }
 
@@ -942,7 +942,7 @@ async function loadResultsTop10() {
 async function saveResultsTop10() {
     const items = document.querySelectorAll('#results-top10-list .sortable-item');
     if (items.length === 0) {
-        alert('Geen top 10 kandidaten om op te slaan');
+        alert('Geen kandidaten om op te slaan');
         return;
     }
 
@@ -1078,6 +1078,15 @@ async function calculateScores() {
             return;
         }
 
+        // Combine top 3 results with top 10 results for the top 3 scoring lookup
+        // This allows scoring riders that are in the top 3 OR the ranking candidates
+        const allResultPositions = [...actualTop3];
+        actualTop10.forEach(r => {
+            if (!allResultPositions.find(a => a.rider_id === r.rider_id)) {
+                allResultPositions.push({ rider_id: r.rider_id, position: r.actual_position });
+            }
+        });
+
         // Load all predictions for this race
         const { data: predictions, error: predError } = await supabase
             .from('predictions')
@@ -1106,7 +1115,7 @@ async function calculateScores() {
         // Calculate scores for each user
         const scoreRows = [];
         for (const pred of predictions) {
-            const top3Score = calculateTop3Score(pred.prediction_top3 || [], actualTop3);
+            const top3Score = calculateTop3Score(pred.prediction_top3 || [], allResultPositions);
             const top10Score = calculateTop10Score(pred.prediction_top10 || [], actualTop10);
             const selectedH2H = pred.prediction_h2h?.[0]?.selected_rider_id || null;
             const h2hScore = calculateH2HScore(selectedH2H, h2hWinner);
@@ -1142,7 +1151,7 @@ async function calculateScores() {
         const sorted = scoreRows.sort((a, b) => b.total_score - a.total_score);
 
         let summaryHtml = `<h4 style="color: var(--success); margin: 15px 0;">Punten berekend voor ${scoreRows.length} speler(s)!</h4>`;
-        summaryHtml += '<table class="scores-table"><thead><tr><th>#</th><th>Speler</th><th>Top 3</th><th>Top 10</th><th>H2H</th><th>Totaal</th></tr></thead><tbody>';
+        summaryHtml += '<table class="scores-table"><thead><tr><th>#</th><th>Speler</th><th>Top 3</th><th>Rangschikking</th><th>H2H</th><th>Totaal</th></tr></thead><tbody>';
 
         sorted.forEach((s, idx) => {
             summaryHtml += `<tr>

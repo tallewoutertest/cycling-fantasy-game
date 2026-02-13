@@ -24,6 +24,7 @@
             <div id="register-form" style="display: none;">
                 <h2>Registreren</h2>
                 <input type="text" id="register-name" placeholder="Naam" required>
+                <input type="text" id="register-nickname" placeholder="Nickname (zichtbaar voor anderen)" required>
                 <input type="email" id="register-email" placeholder="Email" required>
                 <input type="password" id="register-password" placeholder="Wachtwoord (min. 6 tekens)" required>
                 <button onclick="register()">Registreren</button>
@@ -72,7 +73,9 @@
                 <div id="profile-content">
                     <div class="profile-info">
                         <label>Naam:</label>
-                        <input type="text" id="profile-name" placeholder="Je weergavenaam">
+                        <input type="text" id="profile-name" placeholder="Je volledige naam">
+                        <label>Nickname:</label>
+                        <input type="text" id="profile-nickname" placeholder="Bijnaam (zichtbaar in klassement)">
                         <button onclick="updateProfile()" class="btn-primary">Opslaan</button>
                     </div>
                 </div>
@@ -91,8 +94,8 @@
             <form id="prediction-form">
                 <!-- Top 3 -->
                 <div class="prediction-section">
-                    <h3>1. Voorspel de Top 3</h3>
-                    <p class="section-hint">Selecteer 3 renners waarvan jij denkt dat ze in de top 3 eindigen</p>
+                    <h3>1. Kies 3 toprenners</h3>
+                    <p class="section-hint">Selecteer 3 renners waarvan jij denkt dat ze het hoogst eindigen. Hoe hoger ze finishen, hoe meer punten!</p>
                     <div class="top3-inputs">
                         <div class="input-group">
                             <label>🥇 1e plaats</label>
@@ -117,8 +120,8 @@
 
                 <!-- Top 10 Ranking -->
                 <div class="prediction-section">
-                    <h3>2. Rangschik deze 10 renners</h3>
-                    <p class="section-hint">Sleep de renners in de volgorde waarin je denkt dat ze finishen</p>
+                    <h3>2. Rangschik de renners</h3>
+                    <p class="section-hint">Sleep de renners in de volgorde waarin jij denkt dat ze finishen</p>
                     <div id="top10-list" class="sortable-list"></div>
                 </div>
 

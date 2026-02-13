@@ -55,11 +55,11 @@ async function loadStandings() {
         const userIds = [...new Set(scores.map(s => s.user_id))];
         const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, display_name')
+            .select('id, display_name, nickname')
             .in('id', userIds);
 
         const nameMap = {};
-        (profiles || []).forEach(p => { nameMap[p.id] = p.display_name || 'Onbekend'; });
+        (profiles || []).forEach(p => { nameMap[p.id] = p.nickname || p.display_name || 'Onbekend'; });
 
         const raceMap = {};
         (racesData || []).forEach(r => { raceMap[r.id] = r; });
@@ -122,8 +122,8 @@ async function loadStandings() {
         html += '<div class="scoring-rules">';
         html += '<h3>Puntentelling</h3>';
         html += '<div class="rules-grid">';
-        html += '<div class="rule-card"><h4>Top 3</h4><p>Exacte positie: <strong>10 pt</strong></p><p>In top 3, verkeerde positie: <strong>5 pt</strong></p></div>';
-        html += '<div class="rule-card"><h4>Top 10 Ranking</h4><p>Exacte positie: <strong>5 pt</strong></p><p>1 positie ernaast: <strong>3 pt</strong></p><p>2 posities ernaast: <strong>2 pt</strong></p><p>3 posities ernaast: <strong>1 pt</strong></p></div>';
+        html += '<div class="rule-card"><h4>Top 3 Renners</h4><p>Kies 3 renners. Punten op basis van eindpositie:</p><p>1e: <strong>10 pt</strong>, 2e: <strong>9 pt</strong>, 3e: <strong>8 pt</strong>, ... 10e: <strong>1 pt</strong></p></div>';
+        html += '<div class="rule-card"><h4>Rangschikking</h4><p>Exacte positie: <strong>5 pt</strong></p><p>1 ernaast: <strong>3 pt</strong></p><p>2 ernaast: <strong>2 pt</strong></p><p>3 ernaast: <strong>1 pt</strong></p></div>';
         html += '<div class="rule-card"><h4>Head-to-Head</h4><p>Correct: <strong>5 pt</strong></p></div>';
         html += '</div></div>';
 
@@ -189,47 +189,44 @@ async function showScoreDetail(userId, raceId, playerName, raceName) {
         // Summary bar
         html += '<div class="score-summary-bar">';
         html += `<div class="score-summary-item"><span class="score-label">Top 3</span><span class="score-value">${scoreData?.top3_score || 0} pt</span></div>`;
-        html += `<div class="score-summary-item"><span class="score-label">Top 10</span><span class="score-value">${scoreData?.top10_score || 0} pt</span></div>`;
+        html += `<div class="score-summary-item"><span class="score-label">Rangschikking</span><span class="score-value">${scoreData?.top10_score || 0} pt</span></div>`;
         html += `<div class="score-summary-item"><span class="score-label">H2H</span><span class="score-value">${scoreData?.h2h_score || 0} pt</span></div>`;
         html += `<div class="score-summary-item total"><span class="score-label">Totaal</span><span class="score-value">${scoreData?.total_score || 0} pt</span></div>`;
         html += '</div>';
 
-        // Top 3 detail
+        // Top 3 detail - combine top 3 and ranking results for position lookup
         const actualTop3Map = {};
         (actualTop3 || []).forEach(r => { actualTop3Map[r.rider_id] = r.position; });
+        (actualTop10 || []).forEach(r => {
+            if (actualTop3Map[r.rider_id] === undefined) {
+                actualTop3Map[r.rider_id] = r.actual_position;
+            }
+        });
         const predTop3 = (prediction?.prediction_top3 || []).sort((a, b) => a.position - b.position);
 
         html += '<div class="score-detail-section">';
-        html += '<h4>Top 3 Voorspelling</h4>';
-        html += '<table class="score-detail-table"><thead><tr><th>Pos</th><th>Voorspelling</th><th>Uitslag</th><th>Punten</th></tr></thead><tbody>';
+        html += '<h4>Top 3 Renners</h4>';
+        html += '<table class="score-detail-table"><thead><tr><th>Renner</th><th>Eindpositie</th><th>Punten</th></tr></thead><tbody>';
 
-        const posLabels = ['1e', '2e', '3e'];
-        for (let pos = 1; pos <= 3; pos++) {
-            const pred = predTop3.find(p => p.position === pos);
-            const actualAtPos = (actualTop3 || []).find(r => r.position === pos);
+        predTop3.forEach(pred => {
+            const predName = pred?.riders ? `${pred.riders.first_name} ${pred.riders.last_name}` : '-';
+            const actualPos = actualTop3Map[pred.rider_id];
             let points = 0;
             let pointClass = '';
+            let posText = 'Niet in top 10';
 
-            if (pred && actualTop3Map[pred.rider_id] !== undefined) {
-                if (actualTop3Map[pred.rider_id] === pred.position) {
-                    points = 10;
-                    pointClass = 'points-exact';
-                } else {
-                    points = 5;
-                    pointClass = 'points-partial';
-                }
+            if (actualPos !== undefined && actualPos >= 1 && actualPos <= 10) {
+                points = 11 - actualPos;
+                posText = `${actualPos}e`;
+                pointClass = points >= 8 ? 'points-exact' : points >= 5 ? 'points-partial' : 'points-minor';
             }
 
-            const predName = pred?.riders ? `${pred.riders.first_name} ${pred.riders.last_name}` : '-';
-            const actualName = actualAtPos?.riders ? `${actualAtPos.riders.first_name} ${actualAtPos.riders.last_name}` : '-';
-
             html += `<tr>`;
-            html += `<td>${posLabels[pos - 1]}</td>`;
             html += `<td>${predName}</td>`;
-            html += `<td>${actualName}</td>`;
+            html += `<td>${posText}</td>`;
             html += `<td class="${pointClass}">${points > 0 ? '+' + points : '0'}</td>`;
             html += `</tr>`;
-        }
+        });
         html += '</tbody></table></div>';
 
         // Top 10 detail
@@ -238,7 +235,7 @@ async function showScoreDetail(userId, raceId, playerName, raceName) {
         const predTop10 = (prediction?.prediction_top10 || []).sort((a, b) => a.predicted_position - b.predicted_position);
 
         html += '<div class="score-detail-section">';
-        html += '<h4>Top 10 Ranking</h4>';
+        html += '<h4>Rangschikking</h4>';
         html += '<table class="score-detail-table"><thead><tr><th>Voorspeld</th><th>Renner</th><th>Werkelijk</th><th>Verschil</th><th>Punten</th></tr></thead><tbody>';
 
         predTop10.forEach(pred => {
@@ -331,11 +328,11 @@ async function showRacePredictions(raceId, raceName) {
         const userIds = predictions.map(p => p.user_id);
         const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, display_name')
+            .select('id, display_name, nickname')
             .in('id', userIds);
 
         const nameMap = {};
-        (profiles || []).forEach(p => { nameMap[p.id] = p.display_name || 'Onbekend'; });
+        (profiles || []).forEach(p => { nameMap[p.id] = p.nickname || p.display_name || 'Onbekend'; });
 
         let html = '';
 
@@ -355,10 +352,10 @@ async function showRacePredictions(raceId, raceName) {
                 html += '</div>';
             }
 
-            // Top 10
+            // Rangschikking
             const top10 = (pred.prediction_top10 || []).sort((a, b) => a.predicted_position - b.predicted_position);
             if (top10.length > 0) {
-                html += '<div class="pred-section"><span class="pred-label">Top 10:</span>';
+                html += '<div class="pred-section"><span class="pred-label">Rangschikking:</span>';
                 html += top10.map(t => `<span class="pred-pos">${t.predicted_position}.</span> ${t.riders.first_name} ${t.riders.last_name}`).join(', ');
                 html += '</div>';
             }

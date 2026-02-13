@@ -96,10 +96,11 @@ async function login() {
 // Register function
 async function register() {
     const name = document.getElementById('register-name').value.trim();
+    const nickname = document.getElementById('register-nickname').value.trim();
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
 
-    if (!name || !email || !password) {
+    if (!name || !nickname || !email || !password) {
         showAuthMessage('Vul alle velden in', true);
         return;
     }
@@ -122,11 +123,11 @@ async function register() {
     if (error) {
         showAuthMessage('Registratie mislukt: ' + error.message, true);
     } else {
-        // Update profile with display name
+        // Update profile with display name and nickname
         if (data.user) {
             await supabase
                 .from('profiles')
-                .update({ display_name: name })
+                .update({ display_name: name, nickname: nickname })
                 .eq('id', data.user.id);
         }
 
@@ -154,27 +155,36 @@ async function loadUserProfile() {
         .single();
 
     if (data) {
-        const displayName = data.display_name || currentUser.email;
+        const displayName = data.nickname || data.display_name || currentUser.email;
         document.getElementById('user-name').textContent = displayName;
         document.getElementById('profile-name').value = data.display_name || '';
+        const nicknameEl = document.getElementById('profile-nickname');
+        if (nicknameEl) nicknameEl.value = data.nickname || '';
 
-        // Store admin status
+        // Store admin status and nickname
         currentUser.isAdmin = data.is_admin;
+        currentUser.nickname = data.nickname;
     }
 }
 
 // Update profile
 async function updateProfile() {
     const newName = document.getElementById('profile-name').value.trim();
+    const newNickname = document.getElementById('profile-nickname').value.trim();
 
     if (!newName) {
         alert('Vul een naam in');
         return;
     }
 
+    if (!newNickname) {
+        alert('Vul een nickname in');
+        return;
+    }
+
     const { error } = await supabase
         .from('profiles')
-        .update({ display_name: newName })
+        .update({ display_name: newName, nickname: newNickname })
         .eq('id', currentUser.id);
 
     if (error) {
