@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Wielrennen Fantasy</title>
+    <title>Admin - Flitsende Fietsers</title>
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="admin.css">
@@ -165,7 +165,7 @@
                     Top 3 Uitslag
                 </button>
                 <button onclick="showResultsTab('top10')" class="tab-btn" id="tab-btn-res-top10">
-                    Top 10 Uitslag
+                    Rangschikking Uitslag
                 </button>
                 <button onclick="showResultsTab('h2h')" class="tab-btn" id="tab-btn-res-h2h">
                     H2H Uitslag
@@ -201,10 +201,10 @@
 
             <!-- Top 10 Results -->
             <div id="results-tab-top10" class="race-tab-content">
-                <h3>Werkelijke Volgorde Top 10 Kandidaten</h3>
+                <h3>Werkelijke Finishvolgorde</h3>
                 <p class="section-hint">Sleep de renners in de werkelijke finishvolgorde</p>
                 <div id="results-top10-list" class="sortable-list"></div>
-                <button onclick="saveResultsTop10()" class="btn-primary" style="margin-top: 20px;">Top 10 Volgorde Opslaan</button>
+                <button onclick="saveResultsTop10()" class="btn-primary" style="margin-top: 20px;">Volgorde Opslaan</button>
             </div>
 
             <!-- H2H Results -->
@@ -240,7 +240,7 @@
                     Deelnemers
                 </button>
                 <button onclick="showRaceTab('top10')" class="tab-btn" id="tab-btn-top10">
-                    Top 10 Config
+                    Rangschikking
                 </button>
                 <button onclick="showRaceTab('h2h')" class="tab-btn" id="tab-btn-h2h">
                     Head-to-Head
@@ -290,8 +290,8 @@
 
             <!-- Top 10 Tab -->
             <div id="race-tab-top10" class="race-tab-content">
-                <h3>Top 10 Kandidaten Configureren</h3>
-                <p class="section-hint">Selecteer 10 renners die spelers moeten rangschikken</p>
+                <h3>Rangschikking Configureren</h3>
+                <p class="section-hint">Selecteer 5 renners die spelers moeten rangschikken op verwachte finishvolgorde</p>
                 <div class="search-add">
                     <input type="text" id="add-top10-search" placeholder="Zoek renner om toe te voegen..."
                            onkeyup="searchTop10Candidates()">

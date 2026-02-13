@@ -127,7 +127,7 @@ function setupTop10List() {
     const container = document.getElementById('top10-list');
 
     if (top10Candidates.length === 0) {
-        container.innerHTML = '<p class="info-text">De beheerder moet eerst de top 10 kandidaten configureren voor deze koers.</p>';
+        container.innerHTML = '<p class="info-text">De beheerder moet eerst de kandidaten configureren voor deze koers.</p>';
         return;
     }
 

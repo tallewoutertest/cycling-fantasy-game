@@ -86,7 +86,7 @@ function createRaceCard(race, isOpen) {
                         ? `<button onclick="openPredictionModal('${race.id}')" class="btn-primary">
                              <span class="prediction-status" id="status-${race.id}">Voorspelling Invullen</span>
                            </button>`
-                        : `<span class="status-badge bezig" id="race-status-${race.id}">Koers bezig</span>`
+                        : `<span class="status-badge bezig" id="race-status-${race.id}" onclick="showRacePredictions('${race.id}', '${race.name.replace(/'/g, "\\'")}')">Koers bezig</span>`
                     }
                     <span class="score-badge" id="score-${race.id}" style="display:none;"></span>
                 </div>
@@ -109,9 +109,12 @@ async function loadUserScores() {
     racesWithResults.forEach(raceId => {
         const statusEl = document.getElementById(`race-status-${raceId}`);
         if (statusEl) {
+            const race = races.find(r => r.id === raceId);
+            const raceName = race ? race.name.replace(/'/g, "\\'") : '';
             statusEl.textContent = 'Uitslag bekend';
             statusEl.classList.remove('bezig');
             statusEl.classList.add('uitslag');
+            statusEl.onclick = function() { showRacePredictions(raceId, raceName); };
         }
     });
 
