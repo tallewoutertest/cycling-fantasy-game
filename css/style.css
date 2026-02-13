@@ -256,7 +256,7 @@ main {
 }
 
 .race-card.closed {
-    opacity: 0.6;
+    opacity: 0.75;
 }
 
 .race-header {
@@ -815,5 +815,134 @@ main {
     padding: 4px 10px;
     border-radius: 8px;
     font-size: 0.85em;
+    font-weight: 600;
+}
+
+/* Race status badge - "Bezig" */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.status-badge.bezig {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ffb74d;
+    animation: pulse-bezig 2s ease-in-out infinite;
+}
+
+.status-badge.uitslag {
+    background: rgba(76, 175, 80, 0.2);
+    color: var(--success);
+}
+
+@keyframes pulse-bezig {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Clickable scores in standings */
+.score-clickable {
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.score-clickable:hover {
+    background: rgba(255, 215, 0, 0.2);
+    color: var(--primary);
+}
+
+/* Score detail modal */
+.modal-medium {
+    max-width: 650px;
+}
+
+.score-summary-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.score-summary-item {
+    flex: 1;
+    min-width: 80px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+}
+
+.score-summary-item.total {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.score-summary-item .score-label {
+    display: block;
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.score-summary-item .score-value {
+    display: block;
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.score-summary-item.total .score-value {
+    color: var(--primary);
+}
+
+.score-detail-section {
+    margin-bottom: 20px;
+}
+
+.score-detail-section h4 {
+    color: var(--text);
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.score-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.score-detail-table th {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.score-detail-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.score-detail-table .points-exact {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.score-detail-table .points-partial {
+    color: #ffb74d;
+    font-weight: 600;
+}
+
+.score-detail-table .points-minor {
+    color: var(--text-muted);
     font-weight: 600;
 }
